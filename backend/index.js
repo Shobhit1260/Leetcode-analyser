@@ -1,116 +1,92 @@
-import { createPartFromBase64, createPartFromUri, createUserContent, GoogleGenAI } from "@google/genai";
-import readlineSync from "readline-sync";
-const ai = new GoogleGenAI({ apiKey: "AIzaSyArPbMj-lZKcgDbKwt0iPsM5N9OSSxpLXk" });
-const userName1 = "risshi-codes";
-const userName2 = "ashutoshmaurya12137";
+import express from "express";
+import dotenv from "dotenv";
+import { GoogleGenAI } from "@google/genai";
+import { CompareProfiles } from "./src/topics.js";
+import cors from "cors";
 
-// //this function is to interact with the images  and genratethe content from the text or from the images
-// // async function main(prompt) {
-// //     const image = await ai.files.upload({
-// //         file: "images/organ.jpg",
-// //     });
-// //     const response = await ai.models.generateContent({
-// //         model: "gemini-2.0-flash",
-// //         contents: [
-// //             createUserContent([
-// //                 prompt,
-// //                 createPartFromUri(image.uri,image.mimeType),
-// //             ]),
-// //         ],
-// //     });
-// //     console.log(response.text);
-// // }
 
-// console.log(summaryReport1);
-// console.log(summaryReport2);
-// console.log(topicWiseSolvedProblems1);
-// console.log(topicWiseSolvedProblems2);
 
-async function main(prompt) {
-    if (!global.chat) {
-        global.chat = ai.chats.create({
-            model: "gemini-2.0-flash",
-            config: {
-                systemInstruction:""
-            },
-            history: [
-                {
-                    role: "user",
-                    parts: [
-                        {
-                            text: "hello",
-                        },
-                    ],
-                },
-                {
-                    role: "model",
-                    parts: [
-                        {
-                            text: "Great to meet you. What would you like to know?",
-                        },
-                    ],
-                },
-            ],
-        });
-}
-    const response = await global.chat.sendMessage({
-        message: prompt,
+
+dotenv.config();
+
+const app = express();
+const port = 3000;
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.API_KEY,
+});
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
+
+
+const createFunnyComparisonPrompt = (profiles) => {
+  const [user1, user2] = profiles;
+  const roastTarget = user1.problems.totalSolved < user2.problems.totalSolved ? user1 : user2;
+  const appreciateTarget = roastTarget === user1 ? user2 : user1;
+
+  return `
+  You are a savage coding expert with a hilarious sense of humor. Two coders just shared their LeetCode stats. Your job is to act like a friend who's reviewing both and hilariously roasts the weaker performer. Use smart developer humor, sarcastic one-liners, and funny observations about their stats. Be creative, but keep it all friendly and bantery.
+  Refer to their usernames or real names. Make coding jokes (e.g., "Your accuracy is like a JavaScript promise—uncertain") and tease with puns, sass, and nerdy insults.
+  Here’s their data:
+  
+  --- User 1: ${user1.profile.realName || "Anonymous"} ---
+  Username: ${user1.username}
+  Solved: ${user1.problems.totalSolved}/${user1.problems.totalProblems}
+  Accuracy: ${user1.problems.accuracy}%
+  Efficiency in contests: ${user1.efficiency}
+  Rating: ${user1.effactiveRating}
+  Contests Attended: ${user1.totalconstets}
+  Badges: ${user1.badges.count} (${user1.badges.names.join(", ")})
+  Streaks: Current - ${user1.streaks.current}, Max - ${user1.streaks.max}
+  
+  --- User 2: ${user2.profile.realName || "Anonymous"} ---
+  Username: ${user2.username}
+  Solved: ${user2.problems.totalSolved}/${user2.problems.totalProblems}
+  Accuracy: ${user2.problems.accuracy}%
+  Efficiency in contests: ${user2.efficiency}
+  Rating: ${user2.effactiveRating}
+  Contests Attended: ${user2.totalconstets}
+  Badges: ${user2.badges.count} (${user2.badges.names.join(", ")})
+  Streaks: Current - ${user2.streaks.current}, Max - ${user2.streaks.max}
+  
+  Start the roast as a conversation. First, act impressed with both, then slowly start teasing the weaker one. Say things like “Bro, even ChatGPT feels bad for you,” or “Your badges are so few, I thought it was a React bug.”
+   end it with a killer punchline and use funny jokes and natural language.
+  `;
+};
+
+
+app.get("/stream", async (req, res) => {
+  try {
+    const usernames = ["Shobhit_S14", "Risshi-codes"];
+    const profiles = await CompareProfiles(usernames);
+    const prompt = createFunnyComparisonPrompt(profiles);
+async function main() {
+    const response = await ai.models.generateContentStream({
+      model: "gemini-2.0-flash",
+      contents: prompt,
     });
-    console.log("Model: ", response.text);
-}
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Transfer-Encoding", "chunked");
 
-
-// const prompt = `You need to behave as an evaluator, There is a person named: ${userName1} and his leetcode profile summary which is an object you have to go through the whole object to understand their profile better looks like this: ${summaryReport1} and his topic wise problem solved is ${topicWiseSolvedProblems1} .There also one person named: ${userName2} and his leetcode profile summary is like this: ${summaryReport2} his topic wise problem solved is ${topicWiseSolvedProblems2}. the given data is in the object format so you have to read it deep dive . so take your time to evalute this . and if something occurs in the data   which you can't read then ignore that but don't write about it in the response. anlayze both profiles with your best with the given data,You need to evaluate both the user data considering all the factors like contest rating then number of question solved on the important and the hard topics and you have also to see that number of question solved in easy, medium, hard. The user whose performance is no as good as other make joke of him like anything, you are allowed to use bad words too and the person who's profile is good praise him like anything. Also some data may have links ignore the links, you don't have to scrape. Your response should only include the evaluation result nothing else as it will passed to the frontend app directly. Directly give the response as if you were talking to him. You can use emojis also. Also don't print uncessary [object] [object]thing, handle carefully. Basically analyse everything carefully. Also the answer should be of medium length not too long, not too small, i.e. medium - to a bit long length. Also make sure you heavily criticize and make joke out of the person having not soo good profile. If profiles are almost equal praise both and you should have to take your time to analyze everything`
-
-// await main(prompt);
-
-async function start() {
-
-    while(true){
-       const prompt = readlineSync.question('Enter you question? ');
-        if (prompt !== "") {
-            await main(prompt);
-        }
+    for await (const chunk of response) {
+      res.write(chunk.text);
     }
-}
-start();
+    res.end();
+  }
+  await main(); 
+  }
+  catch (err) {
+    console.error("Error:", err);
+    res.status(500).send("Something went wrong!");
+  }
+});
 
 
 
 
-
-
-
-// const model = genAi.getGenerativeModel({
-//     model: "gemini-2.0-flash"
-// });
-
-
-// async function comparisonHandler(){
-    
-//     try {
-//         // Generate response
-//         const response = await model.generateContent(prompt);
-//         const result = response.response.text();
-
-//         // Return the reponse
-//         return {
-//             statusCode: 200,
-//             body: JSON.stringify({
-//                 message: result,
-//             })
-//         }
-//     }
-//     catch (error) {
-//         console.log(error)
-//         return {
-//             statusCode: 500,
-//             body: JSON.stringify({
-//                 message: "Server error",
-//             })
-//         }
-//     }
-// } 
-
-// const comparison = comparisonHandler();
-// console.log(comparison);
+app.listen(port, () => {
+  console.log(` Streaming server is running at http://localhost:${port}/stream`);
+});
