@@ -1,17 +1,39 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import { BsFillEmojiSunglassesFill } from "react-icons/bs";
-// import EmojiPicker from 'emoji-picker-react';
 import { LuMenu } from "react-icons/lu";
 import { BiSolidUser } from "react-icons/bi";
 import img from './assets/image.jpg';
-import { BsLightningChargeFill } from "react-icons/bs";
-
+import axios from "axios";
 
 function App() {
-  const [isfeedback, setfeedback] = useState(false);
-  // const [isreset, setreset] = useState(true);
- 
-  
+  const [isfeedback, setFeedback] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+
+const handleGetFeedback = async () => {
+    
+  setFeedback(true);
+  setLoading(true);
+  setFeedbackText('');
+
+    const result = await axios.get("http://localhost:3000/stream" , {withCredentials: true});
+
+    console.log(result.data);
+
+    
+
+    setTimeout(() => {
+      setFeedbackText(result.data);
+      setLoading(false);
+    }, 2000); 
+  };
+
+  const handleReset = () => {
+    setFeedback(false);
+    setLoading(false);
+    setFeedbackText('');
+  };
+
   return (
     <div className="min-h-screen w-full px-4">
       {/* Header */}
@@ -51,19 +73,23 @@ function App() {
 
       {/* Buttons */}
       <div className='mt-16 flex flex-col md:flex-row justify-center items-center gap-6 md:gap-10'>
-        <button onClick={()=>{
-                       setfeedback(false) }}  className='border-2 border-black w-44 h-12 rounded-lg flex justify-center items-center text-xl md:text-2xl'>Reset</button>
-        <button onClick={()=>{setfeedback(true)
-                   }}className='bg-black text-white font-bold w-44 h-12 rounded-lg flex justify-center items-center text-xl md:text-2xl'>Get feedback</button>
+        <button onClick={handleReset} className='border-2 border-black w-44 h-12 rounded-lg flex justify-center items-center text-xl md:text-2xl'>Reset</button>
+        <button onClick={handleGetFeedback} className='bg-black text-white font-bold w-44 h-12 rounded-lg flex justify-center items-center text-xl md:text-2xl'>Get feedback</button>
       </div>
 
-      {/* Image Section */}
-      <div className='flex justify-center items-center my-20 '>
-        <div className=" flex justify-center items-center overflow-hidden rounded-lg">
-          {(!isfeedback) && <img src={img} alt="image" className="w-64 h-64 md:w-80 md:h-80 object-cover" />}
-          {(isfeedback) && <div className="w-1/2 h-min border-black border-2 font-serif text-2xl rounded-lg p-3">Hello jee jbfhsbfjnjcs bhbsbd  hbbfsfhsja habsdhbhsd hvhbfsdfs hsdjkfsdjfbsd hvhsdjsndj bdsfhsfsn yegfuhewbh c hcbsbcs</div>}
+      {/* Feedback/Image Section */}
+      <div className='flex justify-center items-center my-20'>
+        <div className="flex justify-center items-center overflow-hidden rounded-lg">
+          {!isfeedback && <img src={img} alt="image" className="w-64 h-64 md:w-80 md:h-80 object-cover" />}
+          {isfeedback && (
+            <div className="w-80 min-h-[5rem] border-black border-2 font-serif text-xl rounded-lg p-4 text-center flex items-center justify-center">
+              {loading ? "Loading..." : feedbackText}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Footer */}
       <div className='w-full border-[.5px] border-black'></div>
       <div className='flex flex-col justify-center items-center font-serif p-4 text-center'>
         <p>Made by Me</p>
@@ -72,7 +98,5 @@ function App() {
     </div>
   );
 }
-
-
 
 export default App;
