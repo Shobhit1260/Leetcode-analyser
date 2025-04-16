@@ -4,9 +4,6 @@ import { GoogleGenAI } from "@google/genai";
 import { CompareProfiles } from "./src/topics.js";
 import cors from "cors";
 
-
-
-
 dotenv.config();
 
 const app = express();
@@ -68,6 +65,7 @@ async function main() {
       model: "gemini-2.0-flash",
       contents: prompt,
     });
+    
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
 

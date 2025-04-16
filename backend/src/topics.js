@@ -2,9 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import  LeetCode from "leetcode-query";
 import graphql from "leetcode-query";
 import axios from "axios";
-const ai = new GoogleGenAI({ apiKey: "AIzaSyDP_27TGx5mPmFLUt5_oZ29elWT7rKwqJE" });
 const leetcode = new LeetCode();
-
 
 // // graphql api fetching
 const getUserData = async (username) => {
