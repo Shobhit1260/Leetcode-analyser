@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, Menu, User, RefreshCw, Sparkles } from 'lucide-react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
+
 function App() {
   const [isfeedback, setFeedback] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -244,7 +245,7 @@ function App() {
         </div>
 
         {/* Feedback Section */}
-        <div className="flex justify-center">
+        <div className="flex justify-center min-h-[400px] items-start">
           {!isfeedback ? (
             <div className="relative">
               <div className="w-72 h-72 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-2xl flex flex-col items-center justify-center transform hover:rotate-2 transition-all">
@@ -257,14 +258,10 @@ function App() {
               <div className="bg-white rounded-2xl shadow-2xl border-2 border-indigo-200">
                 <div className="p-8">
                   {loading ? (
-                   
-                    <div className="flex flex-col items-center gap-6 py-16">
-                      <DotLottieReact
-                      src="path/to/animation.lottie"
-                      loop
-                      autoplay
-                    />
-                      <p className="text-gray-700 font-semibold text-lg text-center animate-pulse">
+                    <div className="flex flex-col items-center justify-center gap-6 py-16 min-h-[300px]">
+                      <div className="w-64 h-64">
+                      </div>
+                      <p className="text-gray-700 font-semibold text-lg text-center animate-pulse max-w-md">
                         {currentLoadingMsg}
                       </p>
                       <div className="flex gap-1">

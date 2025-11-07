@@ -7,6 +7,7 @@ import cors from "cors";
 dotenv.config();
 
 const app = express();
+app.use(express.json());
 const port = 3000;
 
 const ai = new GoogleGenAI({
@@ -55,32 +56,42 @@ const createFunnyComparisonPrompt = (profiles) => {
 };
 
 
-app.get("/stream", async (req, res) => {
+app.post("/stream", async (req, res) => {
   try {
-    const usernames = ["Shobhit_S14", "Risshi-codes"];
+    // Extract user1 and user2 from request body
+    const { user1, user2 } = req.body;
+     console.log("user1:",user1,
+       "user2",user2);
+    if (!user1 || !user2) {
+      return res.status(400).send("Both user1 and user2 are required!");
+    }
+
+    const usernames = [user1, user2];
     const profiles = await CompareProfiles(usernames);
     const prompt = createFunnyComparisonPrompt(profiles);
-async function main() {
-    const response = await ai.models.generateContentStream({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-    
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.setHeader("Transfer-Encoding", "chunked");
 
-    for await (const chunk of response) {
-      res.write(chunk.text);
+    async function main() {
+      const response = await ai.models.generateContentStream({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+      });
+
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.setHeader("Transfer-Encoding", "chunked");
+
+      for await (const chunk of response) {
+        res.write(chunk.text);
+      }
+      res.end();
     }
-    res.end();
-  }
-  await main(); 
-  }
-  catch (err) {
+
+    await main();
+  } catch (err) {
     console.error("Error:", err);
     res.status(500).send("Something went wrong!");
   }
 });
+
 
 
 

@@ -70,6 +70,9 @@ const getUserData = async (username) => {
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const calculatePercentage = (numerator, denominator) => {
+  if (!denominator || denominator === 0 || !numerator) {
+    return "0.00";
+  }
   return ((numerator * 100) / denominator).toFixed(2);
 };
 
@@ -160,7 +163,7 @@ const getProfiledata = async (username) => {
     const totalSolved = solvedStats["All"] || 0;
     
     const accuracyData = matchedUser.submitStats.totalSubmissionNum?.find(s => s.difficulty === "All") || {};
-    const filteredprofile= userContestRankingHistory.filter(item=>item.attended===true);
+    const filteredprofile= userContestRankingHistory?.filter(item=>item.attended===true) || [];
     const totalProblemsatcontest=[];
     const solvedProblems=[];
     const finishTime=[];
@@ -174,11 +177,13 @@ const getProfiledata = async (username) => {
     filteredprofile.forEach(data=>finishTime.push(data.finishTimeInSeconds));
     const TotalfinishTime=finishTime.reduce((acc,curr)=>acc+curr,0);
     const totalconstets=filteredprofile.length;
+    
     return {
+      username,
       totalconstets,
-      efficiency:((solvedProblemsNum*100)/totalProblemsNum).toFixed(2)+"%",
-      effactiveRating:((Totalratings)/totalconstets).toFixed(0),
-      effactiveTime:(TotalfinishTime/totalconstets).toFixed(0),
+      efficiency: totalProblemsNum > 0 ? ((solvedProblemsNum*100)/totalProblemsNum).toFixed(2)+"%" : "0.00%",
+      effactiveRating: totalconstets > 0 ? ((Totalratings)/totalconstets).toFixed(0) : "0",
+      effactiveTime: totalconstets > 0 ? (TotalfinishTime/totalconstets).toFixed(0) : "0",
       profile: {
         realName: matchedUser.profile?.realName,
         avatar: matchedUser.profile?.userAvatar,
@@ -220,15 +225,56 @@ export const CompareProfiles = async (usernames) => {
     const results = [];
     
     for (const username of usernames) {
-      // console.log(`Analyzing ${username}...`);
-      const result = await getProfiledata(username);
-      results.push(result);
-      await delay(1500); 
+      try {
+        const result = await getProfiledata(username);
+        results.push(result);
+        await delay(1500); 
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`Failed to fetch profile for ${username}:`, errorMessage);
+        // Return a placeholder for failed profile
+        results.push({
+          username,
+          error: `Failed to fetch data for ${username}. Please check if the username is correct.`,
+          totalconstets: 0,
+          efficiency: "0.00%",
+          effactiveRating: "0",
+          effactiveTime: "0",
+          profile: {
+            realName: "Unknown",
+            avatar: null,
+            ranking: 0,
+          },
+          problems: {
+            easy: 0,
+            medium: 0,
+            hard: 0,
+            totalSolved: 0,
+            totalProblems: 0,
+            solvedPercentage: "0.00",
+            accuracy: "0.00",
+            byDifficulty: {
+              easy: "0.00",
+              medium: "0.00",
+              hard: "0.00",
+            }
+          },
+          badges: {
+            count: 0,
+            names: []
+          },
+          streaks: {
+            current: 0,
+            max: 0
+          }
+        });
+      }
     }
     
     return results;
   } catch (error) {
     console.error("Analysis failed:", error);
+    throw error;
   }
 };
 
